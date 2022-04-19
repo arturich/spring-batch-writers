@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableBatchProcessing
 @ComponentScan({"com.citalin.config",
-				"com.citalin.service",
+				"com.citalin.model",
 				"com.citalin.listener",
 				"com.citalin.processor",
 				"com.citalin.reader",
