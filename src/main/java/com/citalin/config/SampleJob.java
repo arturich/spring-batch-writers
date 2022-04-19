@@ -1,11 +1,10 @@
 package com.citalin.config;
 
-import java.io.File;
-
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
@@ -14,12 +13,16 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 
 import com.citalin.model.StudentCsv;
+import com.citalin.model.StudentJson;
 
 @Configuration
 public class SampleJob {
@@ -38,7 +41,7 @@ public class SampleJob {
 	ItemProcessor<Integer,Long> firstItemProcessor;
 	
 	@Autowired
-	ItemWriter<StudentCsv> firstItemWriter;
+	ItemWriter<StudentJson> firstItemWriter;
 	
 	
 	
@@ -56,27 +59,32 @@ public class SampleJob {
 	private Step firstChunkStep()
 	{
 		return stepBuilderFactory.get("First Chunk Step")
-				.<StudentCsv,StudentCsv>chunk(3)	
-				.reader(flatFileItemReader())
+				.<StudentJson,StudentJson>chunk(3)	
+				//.reader(flatFileItemReader(null))
+				.reader(jsonItemReader(null))
 				//.processor(firstItemProcessor)
 				.writer(firstItemWriter)
 				.build();
 	}
 	
-	public FlatFileItemReader<StudentCsv> flatFileItemReader()
+	// This 2 annotations are required if we want to read with @value
+	// and set the FileSystemResource.
+	@StepScope
+	@Bean
+	public FlatFileItemReader<StudentCsv> flatFileItemReader(
+			@Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource)
 	{
 		FlatFileItemReader<StudentCsv> flatFileItemReader =
 				new FlatFileItemReader<StudentCsv>();
 		//Set the location of the file we are going to read.
-		flatFileItemReader.setResource(new FileSystemResource(
-				new File("C:\\Users\\arturo.reyes\\Documents\\springProjects\\spring-batch-readers\\InputFiles\\students.csv")
-				));
+		flatFileItemReader.setResource(fileSystemResource);
 		
 		flatFileItemReader.setLineMapper(new DefaultLineMapper<StudentCsv>() {
 			{
 				setLineTokenizer(new DelimitedLineTokenizer() {
 					{
 						setNames("ID","First Name","Last Name","Email");
+						setDelimiter("|");
 					}
 				});
 				
@@ -91,6 +99,28 @@ public class SampleJob {
 		flatFileItemReader.setLinesToSkip(1);
 		
 		return flatFileItemReader;
+	}
+	
+	
+	@StepScope
+	@Bean
+	public JsonItemReader<StudentJson> jsonItemReader(
+			@Value("#{jobParameters['inputFile']}") FileSystemResource fileSystemResource)
+	{
+		JsonItemReader<StudentJson> jsonItemReader = 
+				new JsonItemReader<StudentJson>();
+		
+		jsonItemReader.setResource(fileSystemResource);
+		jsonItemReader.setJsonObjectReader(
+				new JacksonJsonObjectReader<>(StudentJson.class));
+		
+		// limite the numnber of records to read
+		jsonItemReader.setMaxItemCount(8);
+		
+		// skip the first 2 items.
+		jsonItemReader.setCurrentItemCount(2);
+		
+		return jsonItemReader;
 	}
 	
 }
