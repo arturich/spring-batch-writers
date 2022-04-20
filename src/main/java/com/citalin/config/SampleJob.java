@@ -59,7 +59,7 @@ public class SampleJob {
 	ItemReader<Integer> firstItemReader;
 	
 	@Autowired
-	ItemProcessor<Integer,Long> firstItemProcessor;
+	ItemProcessor<StudentJdbc,StudentJson> firstItemProcessor;
 	
 	@Autowired
 	ItemWriter<StudentJdbc> firstItemWriter;
@@ -92,13 +92,13 @@ public class SampleJob {
 	private Step firstChunkStep()
 	{
 		return stepBuilderFactory.get("First Chunk Step")
-				.<StudentJdbc,StudentJdbc>chunk(3)	
+				.<StudentJdbc,StudentJson>chunk(3)	
 				//.reader(flatFileItemReader(null))
 				//.reader(jsonItemReader(null))
 				//.reader(staxEventItemReader(null))
 				.reader(jdbcCursorItemReader())
 				//.reader(itemReaderAdapter())
-				//.processor(firstItemProcessor)
+				.processor(firstItemProcessor)
 				//.writer(firstItemWriter)
 				//.writer(flatFileItemWriter(null))
 				.writer(jsonFileItemWriter(null))
@@ -247,12 +247,12 @@ public class SampleJob {
 	
 	@StepScope
 	@Bean
-	public JsonFileItemWriter<StudentJdbc> jsonFileItemWriter(
+	public JsonFileItemWriter<StudentJson> jsonFileItemWriter(
 			@Value("#{jobParameters['outputFile']}") FileSystemResource fileSystemResource)
 	{
-		JsonFileItemWriter<StudentJdbc> jsonFileItemWriter = 
-				new JsonFileItemWriter<StudentJdbc>(fileSystemResource,
-						new JacksonJsonObjectMarshaller<StudentJdbc>());
+		JsonFileItemWriter<StudentJson> jsonFileItemWriter = 
+				new JsonFileItemWriter<StudentJson>(fileSystemResource,
+						new JacksonJsonObjectMarshaller<StudentJson>());
 		
 		return jsonFileItemWriter;
 	}
