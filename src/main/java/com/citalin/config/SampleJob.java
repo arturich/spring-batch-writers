@@ -20,6 +20,7 @@ import org.springframework.batch.item.json.JacksonJsonObjectReader;
 import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,8 +52,17 @@ public class SampleJob {
 	@Autowired
 	ItemWriter<StudentJdbc> firstItemWriter;
 	
+// Code when the data table is in the same DB as the Spring Batch metadata	
+//	@Autowired
+//	private DataSource dataSource;
+	
 	@Autowired
+	@Qualifier("datasource")
 	private DataSource dataSource;
+	
+	@Autowired
+	@Qualifier("univerisityDataSource")
+	private DataSource universityDatasource;
 	
 	
 	@Bean
@@ -159,10 +169,10 @@ public class SampleJob {
 		JdbcCursorItemReader<StudentJdbc> jdbcCursorItemReader =
 				new JdbcCursorItemReader<StudentJdbc>();
 		
-		jdbcCursorItemReader.setDataSource(dataSource);
+		jdbcCursorItemReader.setDataSource(universityDatasource);
 		jdbcCursorItemReader.setSql(""
 				+ "SELECT id, first_name as firstName, last_name as lastName, email "
-				+ "FROM spring_batch.student;");
+				+ "FROM student;");
 		
 		jdbcCursorItemReader.setRowMapper(new BeanPropertyRowMapper<>() {
 			{
