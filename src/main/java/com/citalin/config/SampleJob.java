@@ -2,6 +2,8 @@ package com.citalin.config;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 
 import javax.sql.DataSource;
@@ -16,6 +18,7 @@ import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileFooterCallback;
@@ -106,7 +109,8 @@ public class SampleJob {
 				//.writer(flatFileItemWriter(null))
 				//.writer(jsonFileItemWriter(null))
 				//.writer(staxEventItemWriter(null))
-				.writer(jdbcBatchItemWriter())
+				//.writer(jdbcBatchItemWriter())
+				.writer(jdbcBatchItemWriterPreparedStatement())
 				.build();
 	}
 	
@@ -297,6 +301,37 @@ public class SampleJob {
 		jdbcBatchItemWriter.setItemSqlParameterSourceProvider(
 				new BeanPropertyItemSqlParameterSourceProvider<StudentCsv>()
 				);
+		
+		return jdbcBatchItemWriter;
+	}
+	
+	@Bean
+	public JdbcBatchItemWriter<StudentCsv> jdbcBatchItemWriterPreparedStatement()
+	{
+		JdbcBatchItemWriter<StudentCsv> jdbcBatchItemWriter =
+				new JdbcBatchItemWriter<StudentCsv>();
+		
+		jdbcBatchItemWriter.setDataSource(universityDatasource);
+		
+		jdbcBatchItemWriter.setSql(
+				"INSERT INTO student(id,first_name,last_name,email)"
+				+ "VALUES(?,?,?,?)");
+		
+		
+		jdbcBatchItemWriter.setItemPreparedStatementSetter(
+				new ItemPreparedStatementSetter<StudentCsv>() {
+					
+					@Override
+					public void setValues(StudentCsv item, PreparedStatement ps) throws SQLException {
+						
+						ps.setLong(1, item.getId());
+						ps.setString(2, item.getFirstName());
+						ps.setString(3, item.getLastName());
+						ps.setString(4, item.getEmail());
+						
+					}
+				});
+		
 		
 		return jdbcBatchItemWriter;
 	}
