@@ -17,6 +17,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.adapter.ItemWriterAdapter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.ItemPreparedStatementSetter;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -48,7 +49,9 @@ import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import com.citalin.model.StudentCsv;
 import com.citalin.model.StudentJdbc;
 import com.citalin.model.StudentJson;
+import com.citalin.model.StudentResponse;
 import com.citalin.model.StudentXml;
+import com.citalin.service.StudentService;
 
 
 @Configuration
@@ -82,8 +85,8 @@ public class SampleJob {
 	@Qualifier("univerisityDataSource")
 	private DataSource universityDatasource;
 	
-//	@Autowired
-//	private StudentService studentService;
+	@Autowired
+	private StudentService studentService;
 	
 	
 	@Bean
@@ -110,7 +113,8 @@ public class SampleJob {
 				//.writer(jsonFileItemWriter(null))
 				//.writer(staxEventItemWriter(null))
 				//.writer(jdbcBatchItemWriter())
-				.writer(jdbcBatchItemWriterPreparedStatement())
+				//.writer(jdbcBatchItemWriterPreparedStatement())
+				.writer(itemWriterAdapter())
 				.build();
 	}
 	
@@ -334,6 +338,17 @@ public class SampleJob {
 		
 		
 		return jdbcBatchItemWriter;
+	}
+	
+	public ItemWriterAdapter<StudentCsv> itemWriterAdapter()
+	{
+		ItemWriterAdapter<StudentCsv> itemWriterAdapter =
+				new ItemWriterAdapter<StudentCsv>();
+
+		itemWriterAdapter.setTargetObject(studentService);
+		itemWriterAdapter.setTargetMethod("restCallToCreateStudent");
+
+		return  itemWriterAdapter;
 	}
 	
 }
