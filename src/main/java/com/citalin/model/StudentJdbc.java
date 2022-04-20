@@ -1,5 +1,8 @@
 package com.citalin.model;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "student")
 public class StudentJdbc {
 
 	private Long id;
