@@ -25,7 +25,9 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
 import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.item.json.JacksonJsonObjectMarshaller;
 import org.springframework.batch.item.json.JacksonJsonObjectReader;
+import org.springframework.batch.item.json.JsonFileItemWriter;
 import org.springframework.batch.item.json.JsonItemReader;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +100,8 @@ public class SampleJob {
 				//.reader(itemReaderAdapter())
 				//.processor(firstItemProcessor)
 				//.writer(firstItemWriter)
-				.writer(flatFileItemWriter(null))
+				//.writer(flatFileItemWriter(null))
+				.writer(jsonFileItemWriter(null))
 				.build();
 	}
 	
@@ -239,6 +242,19 @@ public class SampleJob {
 		});
 		
 		return flatFileItemWriter;
+	}
+	
+	
+	@StepScope
+	@Bean
+	public JsonFileItemWriter<StudentJdbc> jsonFileItemWriter(
+			@Value("#{jobParameters['outputFile']}") FileSystemResource fileSystemResource)
+	{
+		JsonFileItemWriter<StudentJdbc> jsonFileItemWriter = 
+				new JsonFileItemWriter<StudentJdbc>(fileSystemResource,
+						new JacksonJsonObjectMarshaller<StudentJdbc>());
+		
+		return jsonFileItemWriter;
 	}
 	
 }
