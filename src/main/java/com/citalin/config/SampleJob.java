@@ -15,6 +15,8 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.file.FlatFileFooterCallback;
 import org.springframework.batch.item.file.FlatFileHeaderCallback;
@@ -93,17 +95,18 @@ public class SampleJob {
 	private Step firstChunkStep()
 	{
 		return stepBuilderFactory.get("First Chunk Step")
-				.<StudentJdbc,StudentJdbc>chunk(3)	
-				//.reader(flatFileItemReader(null))
+				.<StudentCsv,StudentCsv>chunk(3)	
+				.reader(flatFileItemReader(null))
 				//.reader(jsonItemReader(null))
 				//.reader(staxEventItemReader(null))
-				.reader(jdbcCursorItemReader())
+				//.reader(jdbcCursorItemReader())
 				//.reader(itemReaderAdapter())
 				//.processor(firstItemProcessor)
 				//.writer(firstItemWriter)
 				//.writer(flatFileItemWriter(null))
 				//.writer(jsonFileItemWriter(null))
-				.writer(staxEventItemWriter(null))
+				//.writer(staxEventItemWriter(null))
+				.writer(jdbcBatchItemWriter())
 				.build();
 	}
 	
@@ -276,6 +279,26 @@ public class SampleJob {
 		});
 		
 		return staxEventItemWriter;
+	}
+	
+	
+	@Bean
+	public JdbcBatchItemWriter<StudentCsv> jdbcBatchItemWriter()
+	{
+		JdbcBatchItemWriter<StudentCsv> jdbcBatchItemWriter =
+				new JdbcBatchItemWriter<StudentCsv>();
+		
+		jdbcBatchItemWriter.setDataSource(universityDatasource);
+		
+		jdbcBatchItemWriter.setSql(
+				"INSERT INTO student(id,first_name,last_name,email)"
+				+ "VALUES(:id,:firstName,:lastName,:email)");
+		
+		jdbcBatchItemWriter.setItemSqlParameterSourceProvider(
+				new BeanPropertyItemSqlParameterSourceProvider<StudentCsv>()
+				);
+		
+		return jdbcBatchItemWriter;
 	}
 	
 }
